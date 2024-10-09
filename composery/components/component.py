@@ -6,6 +6,13 @@ from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_val
 TComponent = TypeVar("TComponent", bound="Component")
 
 
+class Trim(BaseModel):
+    """A class representing a trim which basically cuts a video or audio component from a start time to an end time"""
+
+    start: int = Field(..., ge=0, description="The start time of the trim")
+    end: int = Field(..., ge=0, description="The end time of the trim")
+
+
 class Position(BaseModel):
     x: int | str = Field(..., description="Position x")
     y: int | str = Field(..., description="Position y")

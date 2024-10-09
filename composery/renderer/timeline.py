@@ -4,6 +4,9 @@ from typing import List, Optional, cast
 
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
+from composery.components.video import Video as VideoComponent
+
+from ..components.audio import Audio as AudioComponent
 from ..components.component import Component, TComponent
 from .options import DEFAULT_OPTIONS, VideoWriterOptions
 
@@ -55,8 +58,19 @@ class Timeline:
         def with_components(
             self, components: List[Component]
         ) -> "Timeline.CompositionBuilder":
-            # Set the z-index of components if not set
-            self._components.extend(sorted(components, key=lambda x: x.z_index))
+            ordered_components = sorted(components, key=lambda x: x.z_index)
+            for component in ordered_components:
+                if isinstance(component, VideoComponent) and component.allow_audio:
+                    ordered_components.append(
+                        AudioComponent(
+                            start_at=component.start_at,
+                            end_at=component.end_at,
+                            duration=component.duration,
+                            source=component.source,
+                            volume=1.0,
+                        )
+                    )
+            self._components.extend(ordered_components)
             return self
 
         def with_duration(self, duration: int) -> "Timeline.CompositionBuilder":
@@ -113,7 +127,7 @@ class Timeline:
         if mode == RenderMode.CPU:
             from .cpu import CPURenderer
 
-            renderer = CPURenderer(filename, 1920 // 2, 1080 // 2, 40, 24)
+            renderer = CPURenderer(filename, 1920, 1080, 10, 25)
             start_time = timer()
             renderer.render(self)
             print(f"Rendered in {timer() - start_time} seconds")

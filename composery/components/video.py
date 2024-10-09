@@ -14,4 +14,3 @@ class Video(Component):
     allow_audio: bool = Field(
         default=True, description="Whether to allow audio in the video component"
     )
-    # TODO: trim
