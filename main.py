@@ -1,17 +1,12 @@
-import av
-from numpy import array, ndarray, zeros
-from PIL import Image, ImageDraw, ImageFont
-
 from composery import Timeline
-from composery.components import Text, Video
-from composery.components.component import Position
+from composery.components import Position, Text, Video
 
 if __name__ == "__main__":
     timeline = Timeline()
 
     # Agregar el video
     video_component = Video(
-        source="./assets/SyncTest1080p25Hz-h264-high.mp4",
+        source="./assets/test-2.mp4",
         allow_audio=True,
         start_at=0,
         end_at=60,
@@ -27,7 +22,7 @@ if __name__ == "__main__":
         {"content": "この動画を楽しんでください！ 🎉", "start_at": 5, "end_at": 10},
         {"content": "すべての人に感謝しています。 🙏", "start_at": 10, "end_at": 15},
         {"content": "一緒に楽しみましょう！ 😄", "start_at": 15, "end_at": 20},
-        {"content": "またお会いしましょう！ 👋", "start_at": 20, "end_at": 25},
+        {"content": "またお会いしましょう！ 👋", "start_at": 20, "end_at": 60},
     ]
 
     composition = [video_component]
@@ -42,6 +37,8 @@ if __name__ == "__main__":
         )
         composition.append(text_component)  # type: ignore
 
-    timeline.add_composition(composition).with_duration(60).with_framerate(24).build()
+    timeline.add_composition(composition).with_duration(10).with_framerate(
+        60
+    ).with_resolution(1920, 1080).build()
 
     timeline.render("./output.mp4")

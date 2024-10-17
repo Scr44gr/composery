@@ -1,5 +1,5 @@
 pydantic==2.9.2
 fastnanoid==0.4.1
-pyav==13.0.0
+av==13.1.0
 numpy==2.1.2
 imageio==2.35.1

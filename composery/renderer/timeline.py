@@ -22,18 +22,14 @@ class Composition(BaseModel):
     components: List[Component] = Field(
         ..., description="The components of the composition"
     )
-    duration: Optional[int] = Field(
-        default=None, gt=0, description="The duration of the composition"
+    duration: int = Field(
+        default=10, gt=0, description="The duration of the composition"
     )
-    framerate: Optional[int] = Field(
-        default=None, ge=0, description="The framerate of the composition"
+    framerate: int = Field(
+        default=24, ge=8, description="The framerate of the composition"
     )
-
-    @field_validator("duration", mode="before")
-    def validate_duration(cls, value: int, info: ValidationInfo) -> int:
-        components: List[Component] = info.data.get("components", [])
-
-        return max(value, sum(component.duration for component in components))
+    width: int = Field(default=640, gt=0, description="The width of the composition")
+    height: int = Field(default=480, gt=0, description="The height of the composition")
 
 
 class Timeline:
@@ -50,6 +46,8 @@ class Timeline:
             self._components: List[Component] = []
             self._duration: Optional[int] = None
             self._framerate: Optional[int] = None
+            self._width: Optional[int] = None
+            self._height: Optional[int] = None
 
         def with_component(self, component: Component) -> "Timeline.CompositionBuilder":
             self._components.append(component)
@@ -83,14 +81,27 @@ class Timeline:
             self._framerate = framerate
             return self
 
+        def with_resolution(
+            self, width: int, height: int
+        ) -> "Timeline.CompositionBuilder":
+            assert width > 0, "Width must be greater than 0"
+            assert height > 0, "Height must be greater than 0"
+            self._width = width
+            self._height = height
+            return self
+
         def build(self) -> None:
             assert self._components, "Components must not be empty"
             assert self._duration, "Duration must be set"
             assert self._framerate, "Framerate must be set"
+            assert self._width, "Width must be set"
+            assert self._height, "Height must be set"
             self._timeline.composition = Composition(
                 components=self._components,
                 duration=self._duration,
                 framerate=self._framerate,
+                width=self._width,
+                height=self._height,
             )
             # Free the builder
             self.free()
@@ -99,6 +110,8 @@ class Timeline:
             self._components = []
             self._duration = None
             self._framerate = None
+            self._width = None
+            self._height = None
 
     def __init__(self):
         self._composition: Optional[Composition] = None
@@ -127,7 +140,13 @@ class Timeline:
         if mode == RenderMode.CPU:
             from .cpu import CPURenderer
 
-            renderer = CPURenderer(filename, 1920, 1080, 10, 25)
+            renderer = CPURenderer(
+                filename,
+                self.composition.width,
+                self.composition.height,
+                self.composition.duration,
+                self.composition.framerate,
+            )
             start_time = timer()
             renderer.render(self)
             print(f"Rendered in {timer() - start_time} seconds")
