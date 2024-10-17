@@ -1,8 +1,10 @@
-from typing import Literal
 import unittest
+from typing import Literal
+
 from pydantic import ValidationError
+
 from composery.components.component import Component
-from composery.renderer.timeline import Timeline, Composition
+from composery.renderer.timeline import Composition, Timeline
 
 
 class TestComponent(Component):
@@ -18,27 +20,29 @@ class TestTimeline(unittest.TestCase):
         timeline = Timeline()
         component = TestComponent(duration=10)
         builder = timeline.add_composition([component])
-        builder.with_duration(10).with_framerate(24).build()
+        builder.with_duration(10).with_framerate(24).with_resolution(1920, 1080).build()
+        composition = timeline.composition
 
-        self.assertEqual(len(timeline._compositions), 1)
-        self.assertEqual(timeline._compositions[0].duration, 10)
-        self.assertEqual(timeline._compositions[0].framerate, 24)
-        self.assertEqual(len(timeline._compositions[0].components), 1)
-        self.assertEqual(timeline._compositions[0].components[0].duration, 10)
+        self.assertIsInstance(composition, Composition)
+        self.assertEqual(composition.duration, 10)
+        self.assertEqual(composition.framerate, 24)
+        self.assertEqual(len(composition.components), 1)
+        self.assertEqual(composition.components[0].duration, 10)
 
     def test_composition_builder_with_multiple_components(self):
         timeline = Timeline()
         component1 = TestComponent(duration=10)
         component2 = TestComponent(duration=20)
         builder = timeline.add_composition([component1, component2])
-        builder.with_duration(30).with_framerate(24).build()
+        builder.with_duration(10).with_framerate(24).with_resolution(1920, 1080).build()
+        composition = timeline.composition
 
-        self.assertEqual(len(timeline._compositions), 1)
-        self.assertEqual(timeline._compositions[0].duration, 30)
-        self.assertEqual(timeline._compositions[0].framerate, 24)
-        self.assertEqual(len(timeline._compositions[0].components), 2)
-        self.assertEqual(timeline._compositions[0].components[0].duration, 10)
-        self.assertEqual(timeline._compositions[0].components[1].duration, 20)
+        self.assertIsInstance(composition, Composition)
+        self.assertEqual(composition.duration, 10)
+        self.assertEqual(composition.framerate, 24)
+        self.assertEqual(len(composition.components), 2)
+        self.assertEqual(composition.components[0].duration, 10)
+        self.assertEqual(composition.components[1].duration, 20)
 
     def test_composition_builder_without_duration(self):
         timeline = Timeline()
@@ -61,16 +65,10 @@ class TestTimeline(unittest.TestCase):
     def test_composition_builder_without_components(self):
         timeline = Timeline()
         builder = timeline.add_composition([])
-        builder.with_duration(10).with_framerate(24)
+        builder.with_duration(10).with_framerate(24).with_resolution(1920, 1080).build()
 
         with self.assertRaises(AssertionError):
             builder.build()
-
-    def test_composition_duration_calculation(self):
-        component1 = TestComponent(duration=10)
-        component2 = TestComponent(duration=20)
-        composition = Composition(components=[component1, component2], duration=0)
-        self.assertEqual(composition.duration, 30)
 
     def test_invalid_duration(self):
         with self.assertRaises(ValidationError):

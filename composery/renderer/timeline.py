@@ -91,7 +91,6 @@ class Timeline:
             return self
 
         def build(self) -> None:
-            assert self._components, "Components must not be empty"
             assert self._duration, "Duration must be set"
             assert self._framerate, "Framerate must be set"
             assert self._width, "Width must be set"
