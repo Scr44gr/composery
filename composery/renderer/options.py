@@ -78,7 +78,7 @@ class VideoWriterOptions(BaseModel):
     format: VideoOutputFormat = Field(
         default=VideoOutputFormat.mp4, description="The format of the video writer"
     )
-    bitrate: str = Field(default="1M", description="The bitrate of the video writer")
+    bitrate: str = Field(default="2000k", description="The bitrate of the video writer")
     codec: VideoOutputCodec = Field(
         default=VideoOutputCodec.libx264, description="The codec of the video writer"
     )
@@ -90,6 +90,9 @@ class VideoWriterOptions(BaseModel):
     )
     audio_codec: str = Field(
         default="aac", description="The audio codec of the video writer"
+    )
+    audio_samples: int = Field(
+        default=1024, description="The audio samples of the video writer"
     )
     audio_sample_rate: int = Field(default=44100, description="Audio sample rate")
     audio_channels: int = Field(default=2, description="Audio channels")

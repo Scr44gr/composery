@@ -30,6 +30,7 @@ class CPURenderer:
         "timeline",
         "options",
         "BLANK_FRAME",
+        "BLANK_AUDIO_FRAME",
     )
     READERS = {}
     COMPUTED_FRAMES: Dict[str, Image.Image] = {}
@@ -50,15 +51,19 @@ class CPURenderer:
         self.duration = duration
         self.options = options
         self.BLANK_FRAME = np.zeros((height, width, 3), dtype=np.uint8)
+        self.BLANK_AUDIO_FRAME = AudioFrame(
+            format="fltp", layout="stereo", samples=self.options.audio_samples
+        )
+        self.BLANK_AUDIO_FRAME.sample_rate = self.options.audio_sample_rate
 
     def render(self, timeline: Timeline):
         self.timeline = timeline
         self.render_frames()
 
-    def get_audio_frame_at_time(self, time: float) -> Optional[AudioFrame]:
-        audio_frame = None
+    def get_audio_frame_at_time(self, time: float, index: int) -> Optional[AudioFrame]:
+        audio_frame = self.BLANK_AUDIO_FRAME
         for audio_component in self.timeline.composition.audio_components:
-            if time - 1 > self.duration or not (
+            if time > self.duration or not (
                 audio_component.start_at <= time <= audio_component.end_at
             ):
                 continue
@@ -68,21 +73,28 @@ class CPURenderer:
             if not raw_audio_frame:
                 continue
             audio_frame = raw_audio_frame
+        audio_frame.rate = self.options.audio_sample_rate
+        audio_frame.time_base = Fraction(1, self.options.audio_sample_rate)
+        audio_frame.pts = int(index * self.options.audio_samples)
         return audio_frame
 
     def get_frame_at_time(self, time: float) -> VideoFrame:
         frame = Image.fromarray(self.BLANK_FRAME)
         for component in self.timeline.composition.components:
-            if not (component.start_at <= time <= component.end_at):
+            if time > self.duration or not (
+                component.start_at <= time <= component.end_at
+            ):
                 continue
-            frame_number = int(round((time - component.start_at) * self.framerate, 0))
+
+            frame_time = time - component.start_at
             if isinstance(component, Video):
                 video_frame = video_reader.get_frame_from_video(
-                    component.source, frame_number
+                    component.source, frame_time
                 )
                 if not video_frame:
                     continue
 
+                video_frame = video_frame.to_image()
                 frame.paste(
                     video_frame,
                     component.fixed_position(
@@ -136,19 +148,19 @@ class CPURenderer:
             video_stream.height = self.height  # type: ignore
             video_stream.thread_type = "AUTO"
             video_stream.codec_context.time_base = Fraction(1, self.framerate)
+            video_stream.bit_rate = int(self.options.bitrate[:-1]) * 1000
             audio_stream.codec_context.time_base = Fraction(
                 1, self.options.audio_sample_rate
             )
+            audio_stream.bit_rate = int(self.options.audio_bitrate[:-1]) * 1000
             for i, frame in enumerate(self.iter_frames()):
                 frame.pts = i
                 output_container.mux(video_stream.encode(frame))
                 del frame
 
-            for audio_frame in self.iter_audio_frames():
-                assert audio_frame.pts is not None
+            for i, audio_frame in enumerate(self.iter_audio_frames()):
                 output_container.mux(audio_stream.encode(audio_frame))
                 del audio_frame
-
             output_container.mux(video_stream.encode(None))
             output_container.close()
 
@@ -165,10 +177,12 @@ class CPURenderer:
         logger.debug(f"iter frames took {perf_counter() - start_time}")
 
     def iter_audio_frames(self) -> Iterable[AudioFrame]:
-        audio_frames = int(self.duration * self.options.audio_sample_rate) // 1000
+        audio_frames = (
+            int(self.duration * self.options.audio_sample_rate) // 1000
+        ) - self.duration
         for index in range(audio_frames):
             time = index / self.options.audio_sample_rate * 1000
-            audio_frame = self.get_audio_frame_at_time(time)
+            audio_frame = self.get_audio_frame_at_time(time, index)
             if audio_frame is None:
                 continue
             yield audio_frame
