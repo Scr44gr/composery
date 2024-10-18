@@ -1,14 +1,5 @@
-# composery
-A video editing library
+<p align="center">
+    <img width="248" height="250" src="https://github.com/user-attachments/assets/31828009-02b7-442b-9e70-7d1c4c04d53e" alt="Composery logo">
+</p>
 
-
-## A ffmpeg fancy wrapper to edit/create videos with python
-
-
-### Installation
-
-TODO!
-
-
-
-I built this in a couple of hours, so it's not perfect, but it's a good start. I'll be adding more features as I need them, but feel free to contribute if you want to add something.
+# Composery
