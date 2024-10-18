@@ -1,18 +1,20 @@
 import platform
 from os import path
-from typing import Callable, Literal, Optional, cast
+from typing import Literal
 
-from numpy import array, ndarray
-from PIL import Image, ImageDraw, ImageFont
-from pilmoji import Pilmoji
+from PIL import Image, ImageFont
+from pilmoji import Pilmoji, getsize
 from pydantic import BaseModel, Field, computed_field
 
-from .component import Component, Position
+from .component import Component
 
 system = platform.system()
 
 
 class TextStyle(BaseModel):
+    text_align: Literal["left", "center", "right"] = Field(
+        "center", description="The alignment of the text"
+    )
     font_size: int = Field(..., description="The font size of the text")
     font_family: str = Field(..., description="The font family of the text")
     color: str = Field(..., description="The color of the text")
@@ -35,10 +37,11 @@ class TextStyle(BaseModel):
 
 
 DEFAULT_TEXT_STYLE = TextStyle(
-    font_size=34,
-    font_family=r"C:\Users\Ebrain\Downloads\MSMINCHO.TTF",
+    font_size=72,
+    font_family=r"Arial",
     color="white",
     background_color="black",
+    text_align="center",
 )
 
 
@@ -67,9 +70,7 @@ class Text(Component):
             print(f"Font file not found: {text_style.font_path}")
             font = ImageFont.load_default()
 
-        box = font.getbbox(content)
-        width = int(box[2] - box[0])
-        height = int(box[3] - box[1])
+        width, height = getsize(content.strip(), font=font)
         offset = text_style.font_size // 2
         image = Image.new(
             "RGBA",
@@ -83,6 +84,7 @@ class Text(Component):
                 content,
                 font=font,
                 fill=text_style.color,
+                align=text_style.text_align,
                 stroke_width=5,
                 stroke_fill=text_style.background_color,
             )
