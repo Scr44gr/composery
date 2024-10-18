@@ -1,21 +1,14 @@
+from logging import getLogger
 from threading import get_ident
 from typing import Optional
 
 import av
-from av.audio.frame import AudioFrame
 from av.container import InputContainer
 
 from . import READERS
+from .utils import get_frame_time
 
-
-def get_frame_time(frame: AudioFrame, video_stream: av.AudioStream) -> float:
-    """Get the time of a frame in milliseconds.
-    Args:
-        frame (av.AudioFrame): The audio frame
-        video_stream (av.Video
-    """
-    assert frame.pts is not None
-    return float(frame.pts or 1 / video_stream.frames)
+logger = getLogger()
 
 
 def seek_audio_frame(container: InputContainer, time: float) -> Optional[av.AudioFrame]:
@@ -31,7 +24,8 @@ def seek_audio_frame(container: InputContainer, time: float) -> Optional[av.Audi
         for frame in container.decode(audio_stream):
             if get_frame_time(frame, audio_stream) >= time:
                 return frame
-    except:
+    except Exception as error:
+        logger.error(f"Error seeking audio frame: {error}")
         return
 
 
