@@ -2,7 +2,7 @@ from enum import Enum
 from timeit import default_timer as timer
 from typing import List, Optional, cast
 
-from pydantic import BaseModel, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_validator
 
 from composery.components.video import Video as VideoComponent
 
@@ -30,6 +30,15 @@ class Composition(BaseModel):
     )
     width: int = Field(default=640, gt=0, description="The width of the composition")
     height: int = Field(default=480, gt=0, description="The height of the composition")
+
+    @computed_field(repr=False)
+    @property
+    def audio_components(self) -> List[AudioComponent]:
+        return [
+            component
+            for component in self.components
+            if isinstance(component, AudioComponent)
+        ]
 
 
 class Timeline:
@@ -145,6 +154,7 @@ class Timeline:
                 self.composition.height,
                 self.composition.duration,
                 self.composition.framerate,
+                options,
             )
             start_time = timer()
             renderer.render(self)

@@ -35,7 +35,7 @@ class TextStyle(BaseModel):
 
 
 DEFAULT_TEXT_STYLE = TextStyle(
-    font_size=48,
+    font_size=34,
     font_family=r"C:\Users\Ebrain\Downloads\MSMINCHO.TTF",
     color="white",
     background_color="black",

@@ -59,7 +59,6 @@ class Component(BaseModel):
                 raise ValueError("end_at must be greater than start_at")
         return value
 
-    @property
     def get_frame_at_time(self) -> Callable[[int], None]:
         raise NotImplementedError("get_frame_at_time method must be implemented")
 

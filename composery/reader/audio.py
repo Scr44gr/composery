@@ -1,140 +1,54 @@
-from os import path
-from subprocess import PIPE, Popen
-from tempfile import TemporaryDirectory
-from typing import List
+from threading import get_ident
+from typing import Optional
 
-from imageio_ffmpeg import get_ffmpeg_exe
+import av
+from av.audio.frame import AudioFrame
+from av.container import InputContainer
 
-from ..components.audio import Audio
-
-FFMPEG_EXE = get_ffmpeg_exe()
-
-TEMP_DIR = TemporaryDirectory(dir=r".\tmp")
+from . import READERS
 
 
-def convert_s_to_hms(seconds: int | float) -> str:
-    """Convert seconds to hours, minutes, and seconds.
+def get_frame_time(frame: AudioFrame, video_stream: av.AudioStream) -> float:
+    """Get the time of a frame in milliseconds.
+    Args:
+        frame (av.AudioFrame): The audio frame
+        video_stream (av.Video
+    """
+    assert frame.pts is not None
+    return float(frame.pts or 1 / video_stream.frames)
+
+
+def seek_audio_frame(container: InputContainer, time: float) -> Optional[av.AudioFrame]:
+    """Seek to an audio frame in a video file.
+    Args:
+        container (av.container): The av.container object
+        time: The time in seconds
+    """
+    audio_stream = container.streams.audio[0]
+    assert audio_stream.time_base
+
+    try:
+        for frame in container.decode(audio_stream):
+            if get_frame_time(frame, audio_stream) >= time:
+                return frame
+    except:
+        return
+
+
+def get_audio_frame_from_video(video_path: str, time: float) -> Optional[av.AudioFrame]:
+    """Get an audio frame from a video file.
 
     Args:
-        seconds (int | float): The number of seconds
-
+        video_path (str): The path to the video file
+        frame_index (int): The frame number
     Returns:
-        str: The time in the format HH:MM:SS
+        av.AudioFrame: The audio frame
+    Raises:
+        IndexError: If the frame number is out of bounds
     """
-    assert seconds >= 0, "The number of seconds must be greater than or equal to 0."
-    hours = int(seconds // 3600)
-    minutes = int((seconds % 3600) // 60)
-    seconds = int(seconds % 60)
-    return f"{hours:02}:{minutes:02}:{seconds:02}"
+    thread_id = get_ident()
+    reader_id = f"{video_path}-audio-{thread_id}"
+    if reader_id not in READERS:
+        READERS[reader_id] = av.open(video_path, "r")
 
-
-def extract_audio_from_video(
-    video_path: str, start_time: int | float, end_time: int | float, output_path: str
-) -> str:
-    """Extract audio from a video file.
-
-    Args:
-        video_path (str): The path to the video file
-        start_time (int | float): The start time in seconds
-        end_time (int | float): The end time in seconds
-        output_path (str): The path to the output audio file
-    """
-    duration = end_time - start_time
-
-    if duration <= 0:
-        raise ValueError("The duration must be greater than 0.")
-
-    command = [
-        "-y",
-        "-ss",
-        convert_s_to_hms(start_time),
-        "-i",
-        video_path,
-        "-t",
-        convert_s_to_hms(duration),
-        output_path,
-    ]
-
-    with Popen(command, executable=FFMPEG_EXE, stdout=PIPE, stderr=PIPE) as process:
-        process.communicate()
-        if process.returncode != 0:
-            raise ValueError("The audio extraction failed.")
-
-    return output_path
-
-
-def merge_audio_files(audio_components: List[Audio], output_path: str) -> str:
-    """Compose audio files into one audio file.
-
-    Args:
-        audio_paths (list[str]): The paths to the audio files
-        output_path (str): The path to the output audio file
-    """
-    output_path = path.join(TEMP_DIR.name, output_path)
-    command = ["-y"]
-    for audio in audio_components:
-        assert audio.path, "The audio source must be set."
-        command.extend(
-            [
-                "-i",
-                audio.path,
-                "-ss",
-                convert_s_to_hms(audio.start_at),
-                "-t",
-                convert_s_to_hms(audio.duration),
-            ]
-        )
-    command.extend(
-        ["-filter_complex", f"concat=n={len(audio_components)}:v=0:a=1", output_path]
-    )
-
-    with Popen(command, executable=FFMPEG_EXE, stdout=PIPE, stderr=PIPE) as process:
-        process.communicate()
-        if process.returncode != 0:
-            raise ValueError("The audio composing failed.")
-    return output_path
-
-
-def merge_audio_to_video(video_path: str, audio_path: str, options: dict):
-    """Merge an audio file with a video file.
-
-    Args:
-        video_path (str): The path to the video file
-        audio_path (str): The path to the audio file
-        output_path (str): The path to the output video file
-        options (dict): The options for the merging process
-    """
-    audio_path = path.join(TEMP_DIR.name, audio_path)
-    command = [
-        "-y",
-        "-i",
-        video_path,
-        "-i",
-        audio_path,
-        "-filter_complex",
-        f"[0:a][1:a]amerge=inputs=2[a]",
-        "-map",
-        "[a]",
-        "-c:v",
-        "copy",
-        "-c:a",
-        "aac",
-        "-shortest",
-        "-strict",
-        "experimental",
-        "-b:a",
-        "192k",
-    ]
-    command.append("./final-output.mp4")
-
-    with Popen(command, executable=FFMPEG_EXE, stdout=PIPE, stderr=PIPE) as process:
-        process.communicate()
-        if process.returncode != 0:
-            raise ValueError("The audio composing failed.")
-
-
-def free():
-    TEMP_DIR.cleanup()
-
-
-__all__ = ["extract_audio_from_video", "merge_audio_files", "free"]
+    return seek_audio_frame(READERS[reader_id], time)

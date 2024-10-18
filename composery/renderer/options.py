@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from enum import Enum
+
+from pydantic import BaseModel, Field
 
 
 class Preset(str, Enum):
@@ -69,9 +70,6 @@ class VideoWriterOptions(BaseModel):
     crf: int = Field(
         default=23, description="The constant rate factor of the video writer"
     )
-    fps: int = Field(
-        default=24, description="The frames per second of the video writer"
-    )
     scale: str = Field(
         default="1920:1080",
         pattern=SCALE_PATTERN,
@@ -87,10 +85,14 @@ class VideoWriterOptions(BaseModel):
     pixel_format: PixelFormat = Field(
         default=PixelFormat.yuv420p, description="The pixel format of the video writer"
     )
-
-    @property
-    def ffmpeg_command(self) -> str:
-        return f"-preset {self.preset} -crf {self.crf} -r {self.fps} -c:v {self.codec} -pix_fmt {self.pixel_format} -b:v {self.bitrate}"
+    audio_bitrate: str = Field(
+        default="192k", description="The audio bitrate of the video writer"
+    )
+    audio_codec: str = Field(
+        default="aac", description="The audio codec of the video writer"
+    )
+    audio_sample_rate: int = Field(default=44100, description="Audio sample rate")
+    audio_channels: int = Field(default=2, description="Audio channels")
 
 
 DEFAULT_OPTIONS = VideoWriterOptions()
