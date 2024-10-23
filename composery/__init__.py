@@ -1,4 +1,3 @@
-from .renderer.timeline import Timeline
-
+from .timeline import Timeline
 
 __all__ = ["Timeline"]

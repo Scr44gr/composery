@@ -6,19 +6,22 @@ from PIL import Image, ImageFont
 from pilmoji import Pilmoji, getsize
 from pydantic import BaseModel, Field, computed_field
 
-from .component import Component
+from .component import Component, Styles
 
 system = platform.system()
 
 
-class TextStyle(BaseModel):
+class TextStyle(Styles):
     text_align: Literal["left", "center", "right"] = Field(
         "center", description="The alignment of the text"
     )
     font_size: int = Field(..., description="The font size of the text")
     font_family: str = Field(..., description="The font family of the text")
     color: str = Field(..., description="The color of the text")
-    background_color: str = Field(..., description="The background color of the text")
+    stroke_width: int = Field(default=0, description="The stroke width of the text")
+    stroke_color: str = Field(
+        default="none", description="The stroke color of the text"
+    )
 
     @property
     def font_path(self) -> str:
@@ -42,6 +45,8 @@ DEFAULT_TEXT_STYLE = TextStyle(
     color="white",
     background_color="black",
     text_align="center",
+    stroke_width=5,
+    stroke_color="black",
 )
 
 
@@ -67,7 +72,6 @@ class Text(Component):
                 text_style.font_size,
             )
         except IOError:
-            print(f"Font file not found: {text_style.font_path}")
             font = ImageFont.load_default()
 
         width, height = getsize(content.strip(), font=font)
@@ -77,15 +81,16 @@ class Text(Component):
             (width + offset, height + offset),
             (255, 255, 255, 0),
         )
+        has_background = text_style.background_color != "transparent"
+        with Pilmoji(image) as pilmoji:
 
-        with Pilmoji(image) as draw:
-            draw.text(
+            pilmoji.text(
                 (offset // 2, offset // 2),
                 content,
                 font=font,
                 fill=text_style.color,
                 align=text_style.text_align,
-                stroke_width=5,
+                stroke_width=text_style.stroke_width,
                 stroke_fill=text_style.background_color,
             )
 

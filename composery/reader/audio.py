@@ -1,14 +1,10 @@
-from logging import getLogger
-from threading import get_ident
 from typing import Optional
 
 import av
 from av.container import InputContainer
 
-from . import READERS
+from . import READERS, get_reader_id
 from .utils import get_frame_time
-
-logger = getLogger()
 
 
 def seek_audio_frame(container: InputContainer, time: float) -> Optional[av.AudioFrame]:
@@ -24,8 +20,7 @@ def seek_audio_frame(container: InputContainer, time: float) -> Optional[av.Audi
         for frame in container.decode(audio_stream):
             if get_frame_time(frame, audio_stream) >= time:
                 return frame
-    except Exception as error:
-        logger.error(f"Error seeking audio frame: {error}")
+    except:
         return
 
 
@@ -40,9 +35,5 @@ def get_audio_frame_from_video(video_path: str, time: float) -> Optional[av.Audi
     Raises:
         IndexError: If the frame number is out of bounds
     """
-    thread_id = get_ident()
-    reader_id = f"{video_path}-audio-{thread_id}"
-    if reader_id not in READERS:
-        READERS[reader_id] = av.open(video_path, "r")
-
+    reader_id = get_reader_id(video_path, mode="audio")
     return seek_audio_frame(READERS[reader_id], time)

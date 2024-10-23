@@ -3,8 +3,8 @@ from typing import Literal
 
 from pydantic import ValidationError
 
-from composery.components.component import Component
-from composery.renderer.timeline import Composition, Timeline
+from composery.components import Component
+from composery.timeline import Composition, Timeline
 
 
 class TestComponent(Component):

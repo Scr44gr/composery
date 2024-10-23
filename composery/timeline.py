@@ -6,9 +6,9 @@ from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_val
 
 from composery.components.video import Video as VideoComponent
 
-from ..components.audio import Audio as AudioComponent
-from ..components.component import Component, TComponent
-from .options import DEFAULT_OPTIONS, VideoWriterOptions
+from .components.audio import Audio as AudioComponent
+from .components.component import Component, TComponent
+from .renderer.options import DEFAULT_OPTIONS, VideoWriterOptions
 
 
 class RenderMode(str, Enum):
@@ -146,7 +146,7 @@ class Timeline:
         """
 
         if mode == RenderMode.CPU:
-            from .cpu import CPURenderer
+            from .renderer.cpu import CPURenderer
 
             renderer = CPURenderer(
                 filename,

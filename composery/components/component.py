@@ -1,6 +1,7 @@
-from typing import Callable, TypeVar, cast
+from typing import Callable, Literal, Optional, TypeVar, cast
 
 from fastnanoid import generate
+from PIL import Image, ImageDraw
 from pydantic import BaseModel, Field, ValidationInfo, computed_field, field_validator
 
 TComponent = TypeVar("TComponent", bound="Component")
@@ -38,6 +39,44 @@ class Position(BaseModel):
         return value
 
 
+class Styles(BaseModel):
+    background_color: str = Field(
+        default="transparent", description="The background color of the component"
+    )
+    border_radius: int = Field(
+        default=0, description="The border radius of the component"
+    )
+    border_color: str = Field(
+        default="none", description="The border color of the component"
+    )
+    border_width: int = Field(
+        default=0, description="The outline width of the component"
+    )
+    outline_width: int = Field(
+        default=0, description="The outline width of the component"
+    )
+    outline_color: str = Field(
+        default="none", description="The outline color of the component"
+    )
+    width: float | Literal["auto"] = Field(
+        default="auto", description="The width of the component"
+    )
+    height: float | Literal["auto"] = Field(
+        default="auto", description="The height of the component"
+    )
+
+
+DEFAULT_STYLES = Styles(
+    background_color="black",
+    border_radius=0,
+    border_color="black",
+    outline_width=0,
+    outline_color="black",
+    width="auto",
+    height="auto",
+)
+
+
 class Component(BaseModel):
     id: str = Field(default_factory=lambda: generate(size=8))
     type: str = Field(..., description="The type of the component")
@@ -49,6 +88,10 @@ class Component(BaseModel):
         description="The position of the component",
     )
     z_index: int = Field(default=0, description="The z-index of the component")
+    styles: Styles = Field(
+        default=DEFAULT_STYLES,
+        description="The styles of the component",
+    )
 
     @field_validator("end_at", mode="before")
     def validate_start_at(cls, value: int, info: ValidationInfo) -> int:
@@ -96,3 +139,27 @@ class Component(BaseModel):
             return cast(tuple[int, int], (x, y))
 
         return get_fixed_position
+
+    def prerendered_box(self) -> Optional[Image.Image]:
+        """Used to get the box of the component before rendering"""
+        width, height = self.styles.width, self.styles.height
+        if isinstance(width, str) or isinstance(height, str):
+            # In case of auto width or height return None
+            # because we don't know the size of the component
+            # so, create the box in the custom component
+            return
+        has_border = self.styles.border_color != "none"
+        border_width = self.styles.border_width
+        img = Image.new(
+            "RGBA",
+            (int(width), int(height)),
+            self.styles.background_color,
+        )
+        if has_border:
+            draw = ImageDraw.Draw(img)
+            draw.rounded_rectangle(
+                (0, 0, int(width), int(height)),
+                outline=self.styles.border_color,
+                width=border_width,
+            )
+        return img

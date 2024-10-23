@@ -1,7 +1,6 @@
-from os import path
-from typing import Callable, Literal
+from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
 from .component import Component
 
