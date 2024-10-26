@@ -3,9 +3,12 @@ from time import perf_counter
 from typing import Dict, Iterable, Optional
 
 import numpy as np
+from av import VideoStream
 from av.audio.frame import AudioFrame
+from av.audio.stream import AudioStream
 from av.container import open as open_container
 from av.video.frame import VideoFrame
+from av.video.stream import VideoStream
 from PIL import Image
 
 from composery.components import Text, Video
@@ -13,6 +16,7 @@ from composery.logger import logger
 from composery.reader import audio as audio_reader
 from composery.reader import free as free_readers
 from composery.reader.video import get_video_size
+from composery.renderer import stream
 from composery.renderer.options import VideoWriterOptions
 from composery.renderer.processors import video
 from composery.timeline import Timeline
@@ -124,29 +128,12 @@ class CPURenderer:
         with open_container(
             self.output_filename, "w", format="mp4"
         ) as output_container:
-            video_stream = output_container.add_stream(
-                codec_name="h264",
-                rate=self.framerate,
-                options={
-                    "crf": str(self.options.crf),
-                    "preset": self.options.preset.value,
-                    "pix_fmt": self.options.pixel_format.value,
-                },
+            video_stream = stream.create_stream(
+                VideoStream, output_container, self.options
             )
-            assert self.options.audio_codec == "aac"
-            audio_stream = output_container.add_stream(
-                self.options.audio_codec,
-                rate=self.options.audio_sample_rate,
+            audio_stream = stream.create_stream(
+                AudioStream, output_container, self.options
             )
-            video_stream.width = self.width  # type: ignore
-            video_stream.height = self.height  # type: ignore
-            video_stream.thread_type = "AUTO"
-            video_stream.codec_context.time_base = Fraction(1, self.framerate)
-            video_stream.bit_rate = int(self.options.bitrate[:-1]) * 1000
-            audio_stream.codec_context.time_base = Fraction(
-                1, self.options.audio_sample_rate
-            )
-            audio_stream.bit_rate = int(self.options.audio_bitrate[:-1]) * 1000
             for i, frame in enumerate(self.iter_frames()):
                 frame.pts = i
                 output_container.mux(video_stream.encode(frame))

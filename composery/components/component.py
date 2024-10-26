@@ -81,9 +81,7 @@ class Component(BaseModel):
     id: str = Field(default_factory=lambda: generate(size=8))
     type: str = Field(..., description="The type of the component")
     start_at: float = Field(..., ge=0, description="The start time of the component")
-    end_at: float = Field(
-        default=None, ge=0, description="The end time of the component"
-    )
+    end_at: float = Field(default=-1, ge=0, description="The end time of the component")
     duration: float = Field(..., ge=0, description="The duration of the component")
     position: Position = Field(
         default_factory=lambda: Position(x="center", y="center"),
@@ -98,7 +96,7 @@ class Component(BaseModel):
     @field_validator("end_at", mode="before")
     def validate_end_at(cls, value: float, info: ValidationInfo) -> float:
 
-        if value is not None:
+        if value == -1:
             start_at = info.data.get("start_at", 0)
             if value < start_at:
                 raise ValueError("end_at must be greater than start_at")
