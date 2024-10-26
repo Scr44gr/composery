@@ -10,8 +10,8 @@ TComponent = TypeVar("TComponent", bound="Component")
 class Trim(BaseModel):
     """A class representing a trim which basically cuts a video or audio component from a start time to an end time"""
 
-    start: int = Field(..., ge=0, description="The start time of the trim")
-    end: int = Field(..., ge=0, description="The end time of the trim")
+    start: float = Field(..., ge=0, description="The start time of the trim")
+    end: float = Field(..., ge=0, description="The end time of the trim")
 
 
 class Position(BaseModel):
@@ -80,9 +80,9 @@ DEFAULT_STYLES = Styles(
 class Component(BaseModel):
     id: str = Field(default_factory=lambda: generate(size=8))
     type: str = Field(..., description="The type of the component")
-    start_at: int = Field(..., ge=0, description="The start time of the component")
-    end_at: int = Field(..., ge=0, description="The end time of the component")
-    duration: int = Field(..., ge=0, description="The duration of the component")
+    start_at: float = Field(..., ge=0, description="The start time of the component")
+    end_at: float = Field(..., ge=0, description="The end time of the component")
+    duration: float = Field(..., ge=0, description="The duration of the component")
     position: Position = Field(
         default_factory=lambda: Position(x="center", y="center"),
         description="The position of the component",
