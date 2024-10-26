@@ -3,7 +3,7 @@ from typing import Optional, cast
 from av.video.frame import VideoFrame
 
 from . import READERS, get_reader_id
-from .utils import seek_frame
+from .decoder import seek_frame
 
 
 def get_frame_from_video(video_path: str, time: float) -> Optional[VideoFrame]:

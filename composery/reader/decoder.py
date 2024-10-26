@@ -8,7 +8,7 @@ from av.subtitles.subtitle import SubtitleSet
 from av.video.frame import VideoFrame
 from av.video.stream import VideoStream
 
-logger = getLogger()
+from composery.logger import logger
 
 
 def get_frame_time(
@@ -36,7 +36,7 @@ def seek_frame(
     try:
         for frame in container.decode(stream):
             assert not isinstance(frame, SubtitleSet)
-            if get_frame_time(frame, stream) >= time:
+            if get_frame_time(frame, stream) - time >= 0:
                 return frame
     except Exception as error:
         logger.error(f"Error seeking frame: {error}")

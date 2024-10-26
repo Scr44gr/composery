@@ -4,7 +4,7 @@ import av
 from av.container import InputContainer
 
 from . import READERS, get_reader_id
-from .utils import get_frame_time
+from .decoder import get_frame_time
 
 
 def seek_audio_frame(container: InputContainer, time: float) -> Optional[av.AudioFrame]:
