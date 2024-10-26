@@ -4,7 +4,7 @@ from typing import Literal
 
 from PIL import Image, ImageFont
 from pilmoji import Pilmoji, getsize
-from pydantic import BaseModel, Field, computed_field
+from pydantic import Field, computed_field
 
 from .component import Component, Styles
 
