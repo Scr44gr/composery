@@ -81,7 +81,9 @@ class Component(BaseModel):
     id: str = Field(default_factory=lambda: generate(size=8))
     type: str = Field(..., description="The type of the component")
     start_at: float = Field(..., ge=0, description="The start time of the component")
-    end_at: float = Field(..., ge=0, description="The end time of the component")
+    end_at: float = Field(
+        default=None, ge=0, description="The end time of the component"
+    )
     duration: float = Field(..., ge=0, description="The duration of the component")
     position: Position = Field(
         default_factory=lambda: Position(x="center", y="center"),
@@ -94,13 +96,19 @@ class Component(BaseModel):
     )
 
     @field_validator("end_at", mode="before")
-    def validate_start_at(cls, value: int, info: ValidationInfo) -> int:
+    def validate_end_at(cls, value: float, info: ValidationInfo) -> float:
 
         if value is not None:
             start_at = info.data.get("start_at", 0)
             if value < start_at:
                 raise ValueError("end_at must be greater than start_at")
-        return value
+            return value
+        # in case valeu is none, return the duration value
+        duration = info.data.get("duration")
+        assert (
+            duration is not None
+        ), "duration must be provided if end_at is not provided"
+        return duration
 
     def get_frame_at_time(self) -> Callable[[int], None]:
         raise NotImplementedError("get_frame_at_time method must be implemented")
