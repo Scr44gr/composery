@@ -12,11 +12,10 @@ from composery.components import Text, Video
 from composery.logger import logger
 from composery.reader import audio as audio_reader
 from composery.reader import free as free_readers
-from composery.renderer.cpu.processors import video
+from composery.reader.video import get_video_size
 from composery.renderer.options import VideoWriterOptions
+from composery.renderer.processors import video
 from composery.timeline import Timeline
-
-from ...reader.video import get_video_size
 
 
 class CPURenderer:
@@ -154,22 +153,23 @@ class CPURenderer:
                 del frame
 
             for i, audio_frame in enumerate(self.iter_audio_frames()):
+                if audio_frame is None:
+                    continue
                 output_container.mux(audio_stream.encode(audio_frame))
                 del audio_frame
             output_container.mux(video_stream.encode(None))
+            output_container.mux(audio_stream.encode(None))
             output_container.close()
 
     def iter_frames(
         self,
     ) -> Iterable[VideoFrame]:
         video_frames = self.duration * self.framerate
-        start_time = perf_counter()
         for frame_number in range(video_frames):
             video_frame = self.get_frame_at_time(frame_number / self.framerate)
             if video_frame is None:
                 continue
             yield video_frame
-        logger.debug(f"iter frames took {perf_counter() - start_time}")
 
     def iter_audio_frames(self) -> Iterable[AudioFrame]:
         audio_frames = (
