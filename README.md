@@ -8,7 +8,7 @@
 
 > ⚠️ we are in a very early development stage so the api will probably change in the near future.
 
-## Quickstar
+## Quickstart
 To install `composery` use this command
 
 ```bash
