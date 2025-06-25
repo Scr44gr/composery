@@ -12,7 +12,7 @@
 To install `composery` use this command
 
 ```bash
-pip install git+https://github.com/VidCompose/composery.git
+pip install git+https://github.com/Scr44gr/composery.git
 ```
 
 Then you can create your first "Hello World" video:
