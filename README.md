@@ -4,7 +4,7 @@
 
 # Composery
 
-[Composery](https://github.com/VidCompose/composery) is a library to create/edit videos in a fast and easy way using python, an alternative to the famous [MoviePy](https://github.com/Zulko/moviepy) library.
+[Composery](https://github.com/Scr44gr/composery) is a library to create/edit videos in a fast and easy way using python, an alternative to the famous [MoviePy](https://github.com/Zulko/moviepy) library.
 
 > ⚠️ we are in a very early development stage so the api will probably change in the near future.
 
